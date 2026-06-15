@@ -10,7 +10,41 @@
         New
     </a>
 </div>
-<section class="overflow-auto max-w-2xl max-h-96 mx-auto bg-slate-600 rounded-lg shadow-xl">
+
+{% if todos %}
+<div class="max-w-2xl mx-auto mb-4 flex flex-col gap-3">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div role="tablist" class="tabs tabs-boxed bg-slate-700">
+            <button type="button" role="tab" data-view="all" class="tab tab-active gap-2">
+                All <span class="badge badge-sm badge-ghost" data-count="all">0</span>
+            </button>
+            <button type="button" role="tab" data-view="pending" class="tab gap-2">
+                Pending <span class="badge badge-sm badge-ghost" data-count="pending">0</span>
+            </button>
+            <button type="button" role="tab" data-view="completed" class="tab gap-2">
+                Completed <span class="badge badge-sm badge-ghost" data-count="completed">0</span>
+            </button>
+        </div>
+        <div class="relative w-full sm:w-64">
+            <input id="todo-search" type="text" placeholder="Search tasks..." autocomplete="off"
+                class="input input-bordered input-sm w-full bg-slate-800 pr-8" />
+            <button id="todo-search-clear" type="button" aria-label="Clear search"
+                class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-lg leading-none text-slate-400 hover:text-slate-100">
+                &times;
+            </button>
+        </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 px-1 text-sm text-slate-300">
+        <span>Showing <span id="todo-shown" class="font-semibold text-slate-100">0</span>
+            of <span id="todo-total" class="font-semibold text-slate-100">0</span></span>
+        <span id="todo-search-chip" class="badge badge-info gap-1 hidden">
+            Search: "<span id="todo-search-term"></span>"
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<section id="todo-section" class="overflow-auto max-w-2xl max-h-96 mx-auto bg-slate-600 rounded-lg shadow-xl">
     <table class="table table-zebra">
         <!-- head -->
         <thead class="bg-slate-700">
@@ -21,10 +55,11 @@
                 <th class="text-center">Options</th>
             </tr>
         </thead>
-        {% if not todos == [] %}
+        {% if todos %}
         <tbody>
             {% for todo in todos %}
-            <tr>
+            <tr class="todo-row" data-status="{{ 'completed' if todo.status else 'pending' }}"
+                data-title="{{ todo.title|lower }}">
                 <th>{{ todo.id }}</th>
                 <td>{{ todo.title }}</td>
                 <td>
@@ -47,6 +82,14 @@
                 </td>
             </tr>
             {% endfor %}
+            <tr id="todo-empty" class="hidden">
+                <td colspan="4" align="center" class="py-6">
+                    <p id="todo-empty-msg" class="mb-3 text-slate-300">No tasks match your filters.</p>
+                    <button id="todo-clear" type="button" class="badge badge-neutral p-3 hover:scale-[1.1]">
+                        Clear filters
+                    </button>
+                </td>
+            </tr>
         </tbody>
         {% else %}
         <tbody>
@@ -59,4 +102,125 @@
         {% endif %}
     </table>
 </section>
+
+{% if todos %}
+<script>
+    (function () {
+        const section = document.getElementById('todo-section');
+        if (!section) return; // control bar not present on this page
+
+        const tabs = Array.prototype.slice.call(document.querySelectorAll('[data-view]'));
+        const search = document.getElementById('todo-search');
+        const searchClear = document.getElementById('todo-search-clear');
+        const chip = document.getElementById('todo-search-chip');
+        const chipTerm = document.getElementById('todo-search-term');
+        const shownEl = document.getElementById('todo-shown');
+        const totalEl = document.getElementById('todo-total');
+        const emptyRow = document.getElementById('todo-empty');
+        const emptyMsg = document.getElementById('todo-empty-msg');
+        const clearBtn = document.getElementById('todo-clear');
+        const counts = {
+            all: document.querySelector('[data-count="all"]'),
+            pending: document.querySelector('[data-count="pending"]'),
+            completed: document.querySelector('[data-count="completed"]'),
+        };
+
+        function activeView() {
+            const active = tabs.find(function (t) { return t.classList.contains('tab-active'); });
+            return active ? active.dataset.view : 'all';
+        }
+
+        // Single source of truth: combine the active view + search term, recompute
+        // visibility, counts, the summary line, and the empty state on every call.
+        function applyFilter() {
+            const rows = Array.prototype.slice.call(section.querySelectorAll('.todo-row'));
+            const view = activeView();
+            const term = (search.value || '').trim().toLowerCase();
+
+            let total = 0, pending = 0, completed = 0, shown = 0;
+            rows.forEach(function (row) {
+                const status = row.dataset.status; // 'completed' | 'pending'
+                total++;
+                if (status === 'completed') { completed++; } else { pending++; }
+                const matchView = view === 'all' || status === view;
+                const matchTerm = term === '' || (row.dataset.title || '').indexOf(term) !== -1;
+                const visible = matchView && matchTerm;
+                row.classList.toggle('hidden', !visible);
+                if (visible) { shown++; }
+            });
+
+            if (counts.all) { counts.all.textContent = total; }
+            if (counts.pending) { counts.pending.textContent = pending; }
+            if (counts.completed) { counts.completed.textContent = completed; }
+
+            if (shownEl) { shownEl.textContent = shown; }
+            if (totalEl) { totalEl.textContent = total; }
+
+            if (chip) {
+                if (term) {
+                    chipTerm.textContent = search.value.trim();
+                    chip.classList.remove('hidden');
+                } else {
+                    chip.classList.add('hidden');
+                }
+            }
+            if (searchClear) { searchClear.classList.toggle('hidden', term === ''); }
+
+            if (emptyRow) {
+                if (shown === 0) {
+                    if (total === 0) {
+                        // every task was deleted live via HTMX
+                        emptyMsg.textContent = 'You do not have anything to do';
+                        clearBtn.classList.add('hidden');
+                    } else {
+                        // tasks exist but the current view/search hides them all
+                        emptyMsg.textContent = 'No tasks match your filters.';
+                        clearBtn.classList.remove('hidden');
+                    }
+                    emptyRow.classList.remove('hidden');
+                } else {
+                    emptyRow.classList.add('hidden');
+                }
+            }
+        }
+
+        // All listeners target nodes inside the swapped content, so when this
+        // script re-runs after an hx-boost navigation it rebinds to fresh nodes
+        // (the old ones are garbage-collected) and never stacks.
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('tab-active'); });
+                tab.classList.add('tab-active');
+                applyFilter(); // search box value is untouched -> survives tab switches
+            });
+        });
+
+        if (search) { search.addEventListener('input', applyFilter); }
+
+        if (searchClear) {
+            searchClear.addEventListener('click', function () {
+                search.value = '';
+                search.focus();
+                applyFilter();
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('tab-active'); });
+                const all = tabs.find(function (t) { return t.dataset.view === 'all'; });
+                if (all) { all.classList.add('tab-active'); }
+                search.value = '';
+                applyFilter();
+            });
+        }
+
+        // A delete swaps out a <tr>; the event bubbles up to the section so we
+        // recompute counts + empty state after every HTMX swap.
+        section.addEventListener('htmx:afterSwap', applyFilter);
+
+        applyFilter(); // initial paint
+    })();
+</script>
+{% endif %}
 {% endblock %}
