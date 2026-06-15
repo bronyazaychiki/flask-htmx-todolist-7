@@ -1,62 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex justify-between max-w-2xl mx-auto border-b border-b-slate-600 mb-8 pb-2">
-    <h1 class="text-2xl font-bold text-center">
-        {% block title %}My Tasks List{% endblock %}
-    </h1>
-    <a hx-swap="transition:true" class="badge badge-info p-4 hover:scale-[1.1]"
-        href="{{ url_for('todo_views.create') }}">
-        New
-    </a>
-</div>
-<section class="overflow-auto max-w-2xl max-h-96 mx-auto bg-slate-600 rounded-lg shadow-xl">
-    <table class="table table-zebra">
-        <!-- head -->
-        <thead class="bg-slate-700">
-            <tr>
-                <th></th>
-                <th>Tasks</th>
-                <th>Status</th>
-                <th class="text-center">Options</th>
-            </tr>
-        </thead>
-        {% if not todos == [] %}
-        <tbody>
-            {% for todo in todos %}
-            <tr>
-                <th>{{ todo.id }}</th>
-                <td>{{ todo.title }}</td>
-                <td>
-                    {% if todo.status %}
-                    ✅
-                    {% else %}
-                    ❌
-                    {% endif %}
-                </td>
-                <td class="flex justify-center gap-2">
-                    <a hx-swap="transition:true" href="{{ url_for('todo_views.update', id = todo.id) }}"
-                        class="badge badge-primary p-3 hover:scale-[1.1]">
-                        Edit
-                    </a>
-                    <button hx-delete="{{ url_for('todo_views.delete', id = todo.id) }}"
-                        hx-confirm="Are you sure you want to delete the task with ID #{{ todo.id }}?"
-                        hx-swap="outerHTML" hx-target="closest tr" class="badge badge-error p-3 hover:scale-[1.1]">
-                        Delete
+<div class="max-w-3xl w-full mx-auto px-4">
+    <header class="flex items-center justify-between gap-4 border-b border-b-slate-600 pb-3">
+        <h1 class="text-2xl font-bold">
+            {% block title %}My Tasks{% endblock %}
+        </h1>
+        <a hx-swap="transition:true" class="badge badge-info p-4 hover:scale-[1.1] shrink-0"
+            href="{{ url_for('todo_views.create') }}">
+            + Details
+        </a>
+    </header>
+
+    {# Quick-add component: input + submit, with submitting / error / success states.
+       It lives outside #board so it keeps focus across HTMX swaps. On success the
+       server sends an `HX-Trigger: todoAdded`, which the hyperscript below uses to
+       reset and refocus the field. #}
+    <section class="card bg-base-200 shadow-xl mt-6">
+        <div class="card-body p-4 sm:p-6 gap-3">
+            <form id="quick-add" hx-post="{{ url_for('todo_views.quick_create') }}" hx-target="#add-status"
+                hx-swap="innerHTML" hx-disabled-elt="find button"
+                _="on todoAdded from body call me.reset() then call #todo-title.focus()">
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="todo-title" name="title" type="text" required minlength="3" maxlength="100"
+                        autocomplete="off" autofocus placeholder="Add a task…"
+                        class="input input-bordered input-primary bg-slate-800 w-full">
+                    <button type="submit" class="btn btn-primary px-6 hover:scale-[1.05] shrink-0">
+                        <span class="when-idle">+ Add</span>
+                        <span class="when-busy items-center gap-2">
+                            <span class="loading loading-spinner loading-xs"></span>
+                            Adding…
+                        </span>
                     </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        {% else %}
-        <tbody>
-            <tr>
-                <td colspan="4" align="center">
-                    You do not have anything to do
-                </td>
-            </tr>
-        </tbody>
-        {% endif %}
-    </table>
-</section>
+                </div>
+            </form>
+            <div id="add-status" aria-live="polite" class="min-h-[1.25rem]">
+                {% include "todo/add_status.partial.html" %}
+            </div>
+        </div>
+    </section>
+
+    {% include "todo/board.partial.html" %}
+</div>
 {% endblock %}

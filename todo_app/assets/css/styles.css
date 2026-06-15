@@ -43,3 +43,24 @@ body {
 .sample-transition {
     view-transition-name: slide-it;
 }
+
+/* Quick-add button: swap the label for a spinner while the request is in flight.
+   HTMX adds .htmx-request to the submitting <form> for the request's duration. */
+.when-busy {
+    display: none;
+}
+
+.htmx-request .when-busy {
+    display: inline-flex;
+}
+
+.htmx-request .when-idle {
+    display: none;
+}
+
+/* Dim the task board while a toggle/delete is in flight (hx-indicator="#board"). */
+#board.htmx-request {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 150ms ease-in;
+}

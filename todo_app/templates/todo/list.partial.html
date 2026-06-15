@@ -1,0 +1,14 @@
+{# The task list, or a friendly placeholder when there is nothing to show. #}
+<ul id="todo-list" class="flex flex-col gap-3">
+    {% if todos %}
+    {% for todo in todos %}
+    {% include "todo/item.partial.html" %}
+    {% endfor %}
+    {% else %}
+    <li class="flex flex-col items-center gap-2 bg-slate-700/60 rounded-lg px-4 py-10 text-center">
+        <span class="text-4xl opacity-60">📝</span>
+        <p class="font-semibold">No tasks yet</p>
+        <p class="text-sm opacity-60">Add your first task using the field above.</p>
+    </li>
+    {% endif %}
+</ul>

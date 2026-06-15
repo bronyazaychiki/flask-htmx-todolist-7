@@ -1,0 +1,31 @@
+{# A single task row, rendered as a card. The checkbox toggles status in place;
+   edit keeps the existing full-page (boosted) flow; delete re-renders the board. #}
+<li id="todo-{{ todo.id }}"
+    class="flex flex-wrap items-center gap-x-3 gap-y-2 bg-slate-700 rounded-lg px-4 py-3 shadow">
+    <input type="checkbox" {% if todo.status %}checked{% endif %}
+        class="checkbox checkbox-success shrink-0"
+        hx-post="{{ url_for('todo_views.toggle', id=todo.id) }}"
+        hx-target="#board" hx-swap="outerHTML" hx-indicator="#board"
+        aria-label="Mark “{{ todo.title }}” as {{ 'pending' if todo.status else 'done' }}">
+
+    <div class="flex-1 min-w-0">
+        <p class="truncate {% if todo.status %}line-through opacity-50{% endif %}">{{ todo.title }}</p>
+        {% if todo.description %}
+        <p class="text-xs opacity-60 truncate">{{ todo.description }}</p>
+        {% endif %}
+    </div>
+
+    <span class="badge shrink-0 {{ 'badge-success' if todo.status else 'badge-ghost' }}">
+        {{ 'Done' if todo.status else 'Pending' }}
+    </span>
+    <a hx-swap="transition:true" href="{{ url_for('todo_views.update', id=todo.id) }}"
+        class="badge badge-primary p-3 hover:scale-[1.1] shrink-0">
+        Edit
+    </a>
+    <button hx-delete="{{ url_for('todo_views.delete', id=todo.id) }}"
+        hx-confirm="Are you sure you want to delete “{{ todo.title }}”?"
+        hx-target="#board" hx-swap="outerHTML" hx-indicator="#board"
+        class="badge badge-error p-3 hover:scale-[1.1] shrink-0">
+        Delete
+    </button>
+</li>

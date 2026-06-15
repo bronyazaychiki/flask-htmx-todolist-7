@@ -1,0 +1,8 @@
+{# Stats + list as one swappable region. Mutations (add/toggle/delete) re-render
+   this whole section so the counts, the list and the empty state never drift.
+   `oob=True` turns it into an out-of-band swap (used by the quick-add response,
+   whose primary target is the #add-status slot). #}
+<section id="board" {% if oob %}hx-swap-oob="true"{% endif %} class="flex flex-col gap-6 mt-6">
+    {% include "todo/stats.partial.html" %}
+    {% include "todo/list.partial.html" %}
+</section>
