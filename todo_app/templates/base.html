@@ -27,6 +27,24 @@
 
         {% include "flashmessages.partial.html" %}
     </main>
+
+    <div id="toast" class="toast toast-end z-50"></div>
+
+    <script>
+        // Operation-level failures (HTMX does not swap a 4xx/5xx response): surface
+        // a brief, understandable toast. Validation errors are returned as 200 and
+        // shown inline in the edit row instead.
+        document.body.addEventListener('htmx:responseError', function () {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-error';
+            alert.setAttribute('role', 'alert');
+            alert.innerHTML = '<span>Something went wrong, please try again.</span>';
+            toast.appendChild(alert);
+            setTimeout(() => alert.remove(), 4000);
+        });
+    </script>
 </body>
 
 </html>

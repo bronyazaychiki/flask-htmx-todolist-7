@@ -1,0 +1,33 @@
+<tr>
+    <th>{{ todo.id }}</th>
+    <td class="{% if todo.status %}line-through opacity-50{% endif %}">{{ todo.title }}</td>
+    <td>
+        {% if todo.status %}
+        ✅
+        {% else %}
+        ❌
+        {% endif %}
+    </td>
+    <td class="flex flex-wrap justify-center gap-2">
+        <button hx-get="{{ url_for('todo_views.edit', id=todo.id) }}" hx-target="closest tr"
+            hx-swap="outerHTML" class="badge badge-primary p-3 hover:scale-[1.1]">
+            Edit
+        </button>
+        {% if todo.status %}
+        <button hx-post="{{ url_for('todo_views.toggle', id=todo.id) }}" hx-target="closest tr"
+            hx-swap="outerHTML" class="badge badge-neutral p-3 hover:scale-[1.1]">
+            Restore
+        </button>
+        {% else %}
+        <button hx-post="{{ url_for('todo_views.toggle', id=todo.id) }}" hx-target="closest tr"
+            hx-swap="outerHTML" class="badge badge-success p-3 hover:scale-[1.1]">
+            Complete
+        </button>
+        {% endif %}
+        <button hx-delete="{{ url_for('todo_views.delete', id=todo.id) }}"
+            hx-confirm="Are you sure you want to delete the task with ID #{{ todo.id }}?"
+            hx-target="closest tr" hx-swap="outerHTML" class="badge badge-error p-3 hover:scale-[1.1]">
+            Delete
+        </button>
+    </td>
+</tr>

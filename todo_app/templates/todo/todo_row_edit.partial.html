@@ -1,0 +1,30 @@
+<tr class="bg-slate-700">
+    <th class="border-l-4 border-primary">{{ todo.id }}</th>
+    <td colspan="3">
+        <form hx-post="{{ url_for('todo_views.edit', id=todo.id) }}" hx-target="closest tr"
+            hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']"
+            class="flex flex-col gap-2 py-1">
+            <input class="input input-bordered input-primary input-sm bg-slate-800 w-full" type="text"
+                name="title" value="{{ title }}" required minlength="3" maxlength="100"
+                placeholder="Title" _="on load call me.focus()">
+            <textarea class="textarea textarea-primary textarea-sm bg-slate-800 w-full h-16"
+                name="description" placeholder="Description">{{ description }}</textarea>
+            {% if error %}
+            <p class="text-error text-sm">{{ error }}</p>
+            {% endif %}
+            <footer class="flex items-center justify-end gap-3">
+                <span class="htmx-indicator flex items-center gap-1 text-sm text-info">
+                    <span class="loading loading-spinner loading-xs"></span> Saving…
+                </span>
+                <button type="submit" class="badge badge-primary p-3 hover:scale-[1.1]">
+                    Save
+                </button>
+                <button type="button" hx-get="{{ url_for('todo_views.row', id=todo.id) }}"
+                    hx-target="closest tr" hx-swap="outerHTML"
+                    class="badge badge-neutral p-3 hover:scale-[1.1]">
+                    Cancel
+                </button>
+            </footer>
+        </form>
+    </td>
+</tr>

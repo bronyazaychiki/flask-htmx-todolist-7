@@ -24,28 +24,7 @@
         {% if not todos == [] %}
         <tbody>
             {% for todo in todos %}
-            <tr>
-                <th>{{ todo.id }}</th>
-                <td>{{ todo.title }}</td>
-                <td>
-                    {% if todo.status %}
-                    ✅
-                    {% else %}
-                    ❌
-                    {% endif %}
-                </td>
-                <td class="flex justify-center gap-2">
-                    <a hx-swap="transition:true" href="{{ url_for('todo_views.update', id = todo.id) }}"
-                        class="badge badge-primary p-3 hover:scale-[1.1]">
-                        Edit
-                    </a>
-                    <button hx-delete="{{ url_for('todo_views.delete', id = todo.id) }}"
-                        hx-confirm="Are you sure you want to delete the task with ID #{{ todo.id }}?"
-                        hx-swap="outerHTML" hx-target="closest tr" class="badge badge-error p-3 hover:scale-[1.1]">
-                        Delete
-                    </button>
-                </td>
-            </tr>
+            {% include 'todo/todo_row.partial.html' %}
             {% endfor %}
         </tbody>
         {% else %}
